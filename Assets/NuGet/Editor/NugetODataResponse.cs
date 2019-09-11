@@ -65,12 +65,8 @@ namespace NugetForUnity
                 package.Authors = entryProperties.GetProperty("Authors");
                 package.DownloadCount = int.Parse(entryProperties.GetProperty("DownloadCount"));
 
-                string iconUrl = entryProperties.GetProperty("IconUrl");
-                if (!string.IsNullOrEmpty(iconUrl))
-                {
-                    package.Icon = NugetHelper.DownloadImage(iconUrl);
-                }
-
+                package.IconUrl = entryProperties.GetProperty("IconUrl");
+                
                 // if there is no title, just use the ID as the title
                 if (string.IsNullOrEmpty(package.Title))
                 {
@@ -122,31 +118,57 @@ namespace NugetForUnity
                     int intDotNetVersion = (int)NugetHelper.DotNetVersion;
                     //bool using46 = DotNetVersion == ApiCompatibilityLevel.NET_4_6; // NET_4_6 option was added in Unity 5.6
                     bool using46 = intDotNetVersion == 3; // NET_4_6 = 3 in Unity 5.6 and Unity 2017.1 - use the hard-coded int value to ensure it works in earlier versions of Unity
-                    NugetFrameworkGroup selectedGroup = null;
+					bool usingStandard2 = intDotNetVersion == 6; // using .net standard 2.0
+					NugetFrameworkGroup selectedGroup = null;
 
                     foreach (var kvPair in dependencyGroups.OrderByDescending(x => x.Key))
                     {
                         string framework = kvPair.Key;
                         NugetFrameworkGroup group = kvPair.Value;
 
-                        // Select the highest .NET library available that is supported
-                        // See here: https://docs.nuget.org/ndocs/schema/target-frameworks
-                        if (using46 && framework == "net462")
+						// Select the highest .NET library available that is supported
+						// See here: https://docs.nuget.org/ndocs/schema/target-frameworks
+						if (usingStandard2 && framework == "netstandard2.0")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (usingStandard2 && framework == "netstandard1.6")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net462")
                         {
                             selectedGroup = group;
                             break;
                         }
-                        else if (using46 && framework == "net461")
+						else if (usingStandard2 && framework == "netstandard1.5")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net461")
                         {
                             selectedGroup = group;
                             break;
                         }
-                        else if (using46 && framework == "net46")
+						else if (usingStandard2 && framework == "netstandard1.4")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net46")
                         {
                             selectedGroup = group;
                             break;
                         }
-                        else if (using46 && framework == "net452")
+						else if (usingStandard2 && framework == "netstandard1.3")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net452")
                         {
                             selectedGroup = group;
                             break;
@@ -156,12 +178,37 @@ namespace NugetForUnity
                             selectedGroup = group;
                             break;
                         }
-                        else if (using46 && framework == "net45")
+						else if (usingStandard2 && framework == "netstandard1.2")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net45")
                         {
                             selectedGroup = group;
                             break;
                         }
-                        else if (using46 && framework == "net403")
+						else if (using46 && framework.Contains("portable-net45"))
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (usingStandard2 && framework == "netstandard1.1")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "netstandard1.1")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (usingStandard2 && framework == "netstandard1.0")
+						{
+							selectedGroup = group;
+							break;
+						}
+						else if (using46 && framework == "net403")
                         {
                             selectedGroup = group;
                             break;

@@ -53,11 +53,11 @@
         /// Gets or sets the <see cref="NugetPackageSource"/> that contains this package.
         /// </summary>
         public NugetPackageSource PackageSource;
-
-        /// <summary>
-        /// Gets or sets the icon for the package as a <see cref="UnityEngine.Texture2D"/>. 
-        /// </summary>
-        public UnityEngine.Texture2D Icon;
+		
+		/// <summary>
+		/// Gets or sets the icon url for the package.
+		/// </summary>
+        public string IconUrl;
 
         /// <summary>
         /// Gets or sets the NuGet packages that this NuGet package depends on.
@@ -117,12 +117,7 @@
             package.ReleaseNotes = nuspec.ReleaseNotes;
             package.LicenseUrl = nuspec.LicenseUrl;
             package.ProjectUrl = nuspec.ProjectUrl;
-
-            if (!string.IsNullOrEmpty(nuspec.IconUrl))
-            {
-                package.Icon = NugetHelper.DownloadImage(nuspec.IconUrl);
-            }
-
+	        package.IconUrl = nuspec.IconUrl;
             package.RepositoryUrl = nuspec.RepositoryUrl;
 
             try

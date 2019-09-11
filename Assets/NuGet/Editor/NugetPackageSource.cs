@@ -376,7 +376,7 @@
         /// <param name="includePrerelease">True to include prerelease packages (alpha, beta, etc).</param>
         /// <param name="includeAllVersions">True to include older versions that are not the latest version.</param>
         /// <returns>A list of all updates available.</returns>
-        private List<NugetPackage> GetLocalUpdates(IEnumerable<NugetPackage> installedPackages, bool includePrerelease = false, bool includeAllVersions = false)
+        private List<NugetPackage> GetLocalUpdates(List<NugetPackageIdentifier> installedPackages, bool includePrerelease = false, bool includeAllVersions = false)
         {
             List<NugetPackage> updates = new List<NugetPackage>();
 
@@ -407,7 +407,7 @@
         /// <param name="targetFrameworks">The specific frameworks to target?</param>
         /// <param name="versionContraints">The version constraints?</param>
         /// <returns>A list of all updates available.</returns>
-        public List<NugetPackage> GetUpdates(IEnumerable<NugetPackage> installedPackages, bool includePrerelease = false, bool includeAllVersions = false, string targetFrameworks = "", string versionContraints = "")
+        public List<NugetPackage> GetUpdates(List<NugetPackageIdentifier> installedPackages, bool includePrerelease = false, bool includeAllVersions = false, string targetFrameworks = "", string versionContraints = "")
         {
             if (IsLocalPath)
             {
@@ -535,7 +535,7 @@
         /// <param name="targetFrameworks">The specific frameworks to target?</param>
         /// <param name="versionContraints">The version constraints?</param>
         /// <returns>A list of all updates available.</returns>
-        private List<NugetPackage> GetUpdatesFallback(IEnumerable<NugetPackage> installedPackages, bool includePrerelease = false, bool includeAllVersions = false, string targetFrameworks = "", string versionContraints = "")
+        private List<NugetPackage> GetUpdatesFallback(List<NugetPackageIdentifier> installedPackages, bool includePrerelease = false, bool includeAllVersions = false, string targetFrameworks = "", string versionContraints = "")
         {
             Stopwatch stopwatch = new Stopwatch();
             stopwatch.Start();

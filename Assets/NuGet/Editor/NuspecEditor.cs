@@ -200,11 +200,11 @@
                         // automatically fill in the dependencies based upon the "root" packages currently installed in the project
                         if (GUILayout.Button(new GUIContent("Automatically Fill Dependencies", "Populates the list of dependencies with the \"root\" NuGet packages currently installed in the project.")))
                         {
-                            NugetHelper.UpdateInstalledPackages();
-                            List<NugetPackage> installedPackages = NugetHelper.InstalledPackages.ToList();
+                            NugetHelper.RefreshPackageConfig();
+                            List<NugetPackage> installedPackages = NugetHelper.PackagesConfigFile.Packages.Select(NugetHelper.GetCachedPackage).ToList();
 
-                            // default all packages to being roots
-                            List<NugetPackage> roots = new List<NugetPackage>(installedPackages);
+							// default all packages to being roots
+							List<NugetPackage> roots = new List<NugetPackage>(installedPackages);
 
                             // remove a package as a root if another package is dependent on it
                             foreach (NugetPackage package in installedPackages)

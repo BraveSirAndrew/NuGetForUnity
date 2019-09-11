@@ -1,4 +1,6 @@
-﻿namespace NugetForUnity
+﻿using Assets.NuGet.Editor;
+
+namespace NugetForUnity
 {
     using System;
     using System.Collections.Generic;
@@ -117,14 +119,14 @@
         /// </summary>
         private HashSet<NugetPackage> openCloneWindows = new HashSet<NugetPackage>();
 
-        private IEnumerable<NugetPackage> FilteredInstalledPackages
+        private List<NugetPackageIdentifier> FilteredInstalledPackages
         {
             get
             {
                 if (installedSearchTerm == "Search")
-                    return NugetHelper.InstalledPackages;
+                    return NugetHelper.PackagesConfigFile.Packages;
 
-                return NugetHelper.InstalledPackages.Where(x => x.Id.ToLower().Contains(installedSearchTerm) || x.Title.ToLower().Contains(installedSearchTerm)).ToList();
+                return NugetHelper.PackagesConfigFile.Packages.Where(x => x.Id.ToLower().Contains(installedSearchTerm)).ToList();
             }
         }
 
@@ -222,7 +224,7 @@
 #if UNITY_2017_1_OR_NEWER // UnityWebRequest is not available in Unity 5.2, which is the currently the earliest version supported by NuGetForUnity.
             using (UnityWebRequest request = UnityWebRequest.Get(url))
             {
-                request.Send();
+                request.SendWebRequest();
 #else
             using (WWW request = new WWW(url))
             {
@@ -349,7 +351,7 @@
                     UpdateOnlinePackages();
 
                     EditorUtility.DisplayProgressBar("Opening NuGet", "Getting installed packages...", 0.6f);
-                    NugetHelper.UpdateInstalledPackages();
+                    NugetHelper.RefreshPackageConfig();
 
                     EditorUtility.DisplayProgressBar("Opening NuGet", "Getting available updates...", 0.9f);
                     UpdateUpdatePackages();
@@ -386,7 +388,7 @@
         private void UpdateUpdatePackages()
         {
             // get any available updates for the installed packages
-            updatePackages = NugetHelper.GetUpdates(NugetHelper.InstalledPackages, showPrereleaseUpdates, showAllUpdateVersions);
+            updatePackages = NugetHelper.GetUpdates(NugetHelper.PackagesConfigFile.Packages, showPrereleaseUpdates, showAllUpdateVersions);
             filteredUpdatePackages = updatePackages;
 
             if (updatesSearchTerm != "Search")
@@ -512,10 +514,10 @@
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             EditorGUILayout.BeginVertical();
 
-            List<NugetPackage> filteredInstalledPackages = FilteredInstalledPackages.ToList();
-            if (filteredInstalledPackages != null && filteredInstalledPackages.Count > 0)
+            List<NugetPackageIdentifier> filteredInstalledPackages = FilteredInstalledPackages.ToList();
+            if (filteredInstalledPackages.Count > 0)
             {
-                DrawPackages(filteredInstalledPackages);
+                DrawPackages(filteredInstalledPackages.Select(NugetHelper.GetCachedPackage));
             }
             else
             {
@@ -569,21 +571,21 @@
             EditorGUILayout.EndScrollView();
         }
 
-        private void DrawPackages(List<NugetPackage> packages)
+        private void DrawPackages(IEnumerable<NugetPackage> packages)
         {
             GUIStyle backgroundStyle = GetBackgroundStyle();
             GUIStyle contrastStyle = GetContrastStyle();
 
-            for (int i = 0; i < packages.Count; i++)
+            foreach (var package in packages)
             {
-                EditorGUILayout.BeginVertical(backgroundStyle);
-                DrawPackage(packages[i], backgroundStyle, contrastStyle);
-                EditorGUILayout.EndVertical();
+	            EditorGUILayout.BeginVertical(backgroundStyle);
+	            DrawPackage(package, backgroundStyle, contrastStyle);
+	            EditorGUILayout.EndVertical();
 
-                // swap styles
-                GUIStyle tempStyle = backgroundStyle;
-                backgroundStyle = contrastStyle;
-                contrastStyle = tempStyle;
+	            // swap styles
+	            GUIStyle tempStyle = backgroundStyle;
+	            backgroundStyle = contrastStyle;
+	            contrastStyle = tempStyle;
             }
         }
 
@@ -728,8 +730,8 @@
 
                     if (GUILayout.Button("Install All Updates", GUILayout.Width(150)))
                     {
-                        NugetHelper.UpdateAll(updatePackages, NugetHelper.InstalledPackages);
-                        NugetHelper.UpdateInstalledPackages();
+                        NugetHelper.UpdateAll(updatePackages, NugetHelper.PackagesConfigFile.Packages);
+                        NugetHelper.RefreshPackageConfig();
                         UpdateUpdatePackages();
                     }
                 }
@@ -780,7 +782,7 @@
         /// <param name="package">The <see cref="NugetPackage"/> to draw.</param>
         private void DrawPackage(NugetPackage package, GUIStyle packageStyle, GUIStyle contrastStyle)
         {
-            IEnumerable<NugetPackage> installedPackages = NugetHelper.InstalledPackages;
+            List<NugetPackageIdentifier> installedPackages = NugetHelper.PackagesConfigFile.Packages;
             var installed = installedPackages.FirstOrDefault(p => p.Id == package.Id);
 
             EditorGUILayout.BeginHorizontal();
@@ -802,9 +804,9 @@
                     rect.width = iconSize;
                     rect.height = iconSize;
 
-                    if (package.Icon != null)
+                    if (!string.IsNullOrEmpty(package.IconUrl))
                     {
-                        GUI.DrawTexture(rect, package.Icon, ScaleMode.StretchToFill);
+                        GUI.DrawTexture(rect, ImageLoader.LoadImageAsync(package.IconUrl, defaultIcon, this), ScaleMode.StretchToFill);
                     }
                     else
                     {
@@ -862,7 +864,7 @@
                     {
                         // TODO: Perhaps use a "mark as dirty" system instead of updating all of the data all the time? 
                         NugetHelper.Uninstall(package);
-                        NugetHelper.UpdateInstalledPackages();
+                        NugetHelper.RefreshPackageConfig();
                         UpdateUpdatePackages();
                     }
                 }
@@ -876,7 +878,7 @@
                             if (GUILayout.Button("Update"))
                             {
                                 NugetHelper.Update(installed, package);
-                                NugetHelper.UpdateInstalledPackages();
+                                NugetHelper.RefreshPackageConfig();
                                 UpdateUpdatePackages();
                             }
                         }
@@ -886,7 +888,7 @@
                             if (GUILayout.Button("Downgrade"))
                             {
                                 NugetHelper.Update(installed, package);
-                                NugetHelper.UpdateInstalledPackages();
+                                NugetHelper.RefreshPackageConfig();
                                 UpdateUpdatePackages();
                             }
                         }
@@ -897,7 +899,7 @@
                         {
                             NugetHelper.InstallIdentifier(package);
                             AssetDatabase.Refresh();
-                            NugetHelper.UpdateInstalledPackages();
+                            NugetHelper.RefreshPackageConfig();
                             UpdateUpdatePackages();
                         }
                     }
